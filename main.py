@@ -419,28 +419,10 @@ async def a2a_endpoint(body: A2ARequestBody):
         )
         logger.info(f"✅ Processing complete - Task ID: {result.id}, State: {result.status.state}")
         
-        # Handle webhook notification if configured
-        if config and not config.blocking and config.pushNotificationConfig:
-            logger.info(f"📤 Sending webhook notification to: {config.pushNotificationConfig.url}")
-            # Send async notification
-            await send_webhook_notification(
-                config.pushNotificationConfig.url,
-                result,
-                config.pushNotificationConfig.authentication
-            )
-            # Return immediate response
-            logger.info("📨 Returning immediate 'working' response for async processing")
-            return JSONRPCResponse(
-                id=rpc_request.id,
-                result=TaskResult(
-                    id=result.id,
-                    contextId=result.contextId,
-                    status=TaskStatus(state="working"),
-                    kind="task"
-                )
-            ).model_dump()
+        # Always return the full result (ignore blocking config for now)
+        # Webhook support can be added later if needed
+        logger.info("📦 Building response with full result")
         
-        # Build response
         response = JSONRPCResponse(
             id=rpc_request.id,
             result=result
