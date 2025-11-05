@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+*.log
+.DS_Store
+
+# Documentation files (except README.md)
+*.md
+!README.md
+sample_transcript.json
+setup.sh
+test_agent.py
+PROJECT_STRUCTURE.txt
