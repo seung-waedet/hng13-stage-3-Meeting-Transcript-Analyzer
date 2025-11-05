@@ -262,13 +262,39 @@ async def health_check():
         "model": "gemini-2.0-flash-exp"
     }
 
+class A2ARequestBody(BaseModel):
+    """A2A Protocol Request Body for Swagger documentation"""
+    jsonrpc: Literal["2.0"] = Field(..., example="2.0")
+    id: str = Field(..., example="req-123")
+    method: Literal["message/send", "execute"] = Field(..., example="message/send")
+    params: Dict[str, Any] = Field(
+        ...,
+        example={
+            "message": {
+                "kind": "message",
+                "role": "user",
+                "parts": [
+                    {
+                        "kind": "text",
+                        "text": "Team standup - John completed auth module. Sarah will test tomorrow. We decided to launch next week."
+                    }
+                ],
+                "messageId": "msg-456"
+            },
+            "configuration": {
+                "blocking": True,
+                "acceptedOutputModes": ["text/plain", "application/json"]
+            }
+        }
+    )
+
 @app.post(
     "/a2a/analyze",
     summary="A2A Protocol Endpoint",
     description="Main A2A endpoint for meeting transcript analysis following JSON-RPC 2.0",
     tags=["A2A Protocol"]
 )
-async def a2a_endpoint(request: Request):
+async def a2a_endpoint(body: A2ARequestBody):
     """
     A2A Protocol endpoint following JSON-RPC 2.0 specification.
     
@@ -306,32 +332,21 @@ async def a2a_endpoint(request: Request):
     **Response Format:**
     Returns a TaskResult with analysis artifacts and conversation history.
     """
-    # Log raw request body first
-    try:
-        body = await request.json()
-        logger.info("="*80)
-        logger.info("📥 INCOMING A2A REQUEST - RAW BODY")
-        logger.info("="*80)
-        logger.info(f"Raw request body: {json.dumps(body, indent=2)}")
-        logger.info("="*80)
-    except Exception as e:
-        logger.error(f"❌ Failed to parse request body as JSON: {str(e)}")
-        return JSONResponse(
-            status_code=400,
-            content={
-                "jsonrpc": "2.0",
-                "id": None,
-                "error": {
-                    "code": -32700,
-                    "message": "Parse error",
-                    "data": {"details": "Invalid JSON in request body"}
-                }
-            }
-        )
+    # Log raw request body
+    logger.info("="*80)
+    logger.info("📥 INCOMING A2A REQUEST - RAW BODY")
+    logger.info("="*80)
+    logger.info(f"Raw request body: {json.dumps(body.model_dump(), indent=2)}")
+    logger.info("="*80)
     
     # Validate and parse A2A request
     try:
-        rpc_request = JSONRPCRequest(**body)
+        rpc_request = JSONRPCRequest(
+            jsonrpc=body.jsonrpc,
+            id=body.id,
+            method=body.method,
+            params=body.params
+        )
         logger.info("✅ Request validated successfully")
         logger.info(f"Request ID: {rpc_request.id}")
         logger.info(f"Method: {rpc_request.method}")
@@ -347,13 +362,13 @@ async def a2a_endpoint(request: Request):
             status_code=422,
             content={
                 "jsonrpc": "2.0",
-                "id": body.get("id"),
+                "id": body.id,
                 "error": {
                     "code": -32600,
                     "message": "Invalid Request",
                     "data": {
                         "details": str(e),
-                        "received_body": body
+                        "received_body": body.model_dump()
                     }
                 }
             }
@@ -613,13 +628,27 @@ Meeting Transcript:
 {transcript}
 
 Extract and return ONLY a valid JSON object with these exact keys:
-- summary: A concise summary (2-3 sentences) as a string
-- action_items: Array of specific tasks with owners if mentioned
-- key_decisions: Array of key decisions made
-- participants_mentioned: Array of participant names
-- next_steps: Array of next steps or follow-up actions
+- summary: A concise summary (2-3 sentences) as a STRING
+- action_items: Array of STRINGS describing tasks (e.g., "James to optimize load time by Friday", "Mark to finish content migration by next week")
+- key_decisions: Array of STRINGS describing decisions made
+- participants_mentioned: Array of STRINGS with participant names only
+- next_steps: Array of STRINGS describing next steps
 
-Return ONLY the JSON object, no other text."""
+IMPORTANT: 
+- action_items must be an array of STRINGS, not objects
+- Each action item should be a single string like "Person to do task by deadline"
+- Do NOT use objects with task/owner fields
+
+Return ONLY the JSON object, no other text.
+
+Example format:
+{{
+  "summary": "Team discussed project status...",
+  "action_items": ["James to optimize load time by Friday", "Mark to finish migration by next week"],
+  "key_decisions": ["Decided to launch next Wednesday"],
+  "participants_mentioned": ["Sarah", "James", "Mark"],
+  "next_steps": ["Client demo next Wednesday"]
+}}"""
 
     logger.info("📡 Calling Gemini API...")
     response = model.generate_content(
@@ -660,9 +689,20 @@ Return ONLY the JSON object, no other text."""
             logger.error(f"Response text: {response_text[:500]}")
             raise ValueError("Could not parse JSON from Gemini response")
     
+    # Convert action items to strings if they're objects
+    action_items = result.get("action_items", [])
+    if action_items and isinstance(action_items[0], dict):
+        logger.info("⚠️ Converting action items from objects to strings")
+        action_items = [
+            f"{item.get('owner', 'Someone')} to {item.get('task', 'complete task')}"
+            if 'owner' in item and 'task' in item
+            else str(item)
+            for item in action_items
+        ]
+    
     return AnalysisResult(
         summary=result.get("summary", "No summary available"),
-        action_items=result.get("action_items", []),
+        action_items=action_items,
         key_decisions=result.get("key_decisions", []),
         participants_mentioned=result.get("participants_mentioned", []),
         next_steps=result.get("next_steps", [])
