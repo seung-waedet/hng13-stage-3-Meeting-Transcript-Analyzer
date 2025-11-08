@@ -11,16 +11,6 @@ Built with FastAPI and integrated with Telex.im using the A2A protocol.
 
 ---
 
-## 🚀 Quick Start
-
-**New here?** → Read **[START_HERE.md](START_HERE.md)** for a complete setup guide (10 minutes)
-
-**Want A2A details?** → Read **[A2A_PROTOCOL.md](A2A_PROTOCOL.md)** for full protocol implementation
-
-**Already setup?** → Jump to [Usage](#usage) or visit http://localhost:8000/docs
-
----
-
 ## ⭐ A2A Protocol Compliance
 
 This agent **strictly follows the A2A (Agent-to-Agent) Protocol** specification:
@@ -34,8 +24,6 @@ This agent **strictly follows the A2A (Agent-to-Agent) Protocol** specification:
 - ✅ **Error handling** with JSON-RPC error codes
 
 **Primary endpoint:** `POST /a2a/analyze`
-
-See [A2A_PROTOCOL.md](A2A_PROTOCOL.md) for complete implementation details.
 
 ---
 
@@ -84,7 +72,6 @@ cp .env.example .env
 Edit `.env` and add your credentials:
 ```
 GEMINI_API_KEY=your_gemini_api_key_here
-TELEX_CHANNEL_ID=your_channel_id_here
 AGENT_PORT=8000
 ```
 
@@ -253,43 +240,6 @@ docker build -t meeting-analyzer .
 docker run -p 8000:8000 --env-file .env meeting-analyzer
 ```
 
-### Cloud Deployment
-
-Deploy to platforms like:
-- Railway
-- Render
-- Heroku
-- AWS Lambda
-- Google Cloud Run
-
-## Testing
-
-### Option 1: Automated Test Script
-
-```bash
-python test_agent.py
-```
-
-### Option 2: Swagger UI
-
-1. Visit http://localhost:8000/docs
-2. Test each endpoint interactively
-3. See real-time responses
-
-### Option 3: Manual cURL
-
-Test the health endpoint:
-```bash
-curl http://localhost:8000/health
-```
-
-Test A2A analysis:
-```bash
-curl -X POST http://localhost:8000/a2a/analyze \
-  -H "Content-Type: application/json" \
-  -d @sample_transcript.json
-```
-
 ## Error Handling
 
 The agent handles:
@@ -355,56 +305,5 @@ meeting-transcript-analyzer/
 ├── setup.sh                   # Setup script
 ├── START_HERE.md              # Setup guide
 ├── README.md                  # This file
-└── [10+ documentation files]  # Comprehensive guides
 ```
 
-See `PROJECT_STRUCTURE.txt` for complete file tree.
-
-## 📖 Documentation
-
-| File | Purpose |
-|------|---------|
-| [START_HERE.md](START_HERE.md) | Complete setup guide (start here!) |
-| [A2A_PROTOCOL.md](A2A_PROTOCOL.md) | **A2A Protocol implementation details** |
-| [QUICKSTART.md](QUICKSTART.md) | Fast setup alternative |
-| [SWAGGER_GUIDE.md](SWAGGER_GUIDE.md) | Interactive API testing |
-| [API_EXAMPLES.md](API_EXAMPLES.md) | Code examples |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System design |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Deployment guide |
-| [SUBMISSION_CHECKLIST.md](SUBMISSION_CHECKLIST.md) | HNG submission |
-
-## 🤝 Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📄 License
-
-MIT License
-
-## 💬 Support
-
-For issues or questions:
-- Check the documentation files
-- Open an issue on GitHub
-- Contact via Telex.im
-
-## 🏆 Acknowledgments
-
-- Built for HNG Internship Stage 3 Backend Task
-- Powered by Google Gemini 2.0 Flash
-- Integrated with Telex.im
-
-## 🔗 Links
-
-- **Gemini API**: https://ai.google.dev/
-- **FastAPI**: https://fastapi.tiangolo.com/
-- **Telex.im**: https://telex.im/
-- **HNG Internship**: https://hng.tech/
-
----
-
-**Made with ❤️ for HNG Internship Stage 3**
